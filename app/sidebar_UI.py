@@ -49,5 +49,5 @@ def sidebar_UI():
             st.write(f'EV/EBITDA: {ee}')
 
             st.caption(company_profile(option[:3])['companyProfile'].values[0])
-    ticker = option[:3]
-    return ticker
+    
+    return option
