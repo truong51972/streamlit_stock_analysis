@@ -7,14 +7,24 @@ def sidebar_UI():
         with st.container():
             ticker_and_name = get_all_ticker()
 
-            option = st.selectbox(
+            # option = st.selectbox(
+            #     'Select your ticker',
+            #     ticker_and_name
+            # )
+
+            col1, col2 = st.columns([0.75,0.25])
+            with col1: 
+                option = st.selectbox(
                 'Select your ticker',
                 ticker_and_name
-            )
+                )
+            with col2: 
+                numOfAnswers = int(st.selectbox(label='Research', options= ('0', '1', '2')))
 
             companyName, price, shares, marketCap, debt, bvps, ebitda, eps, pe, pb, ee = get_company_finance_info(option[:3])
-            
+
             st.button("Analyze!", key='analyze', use_container_width=True)
+
 
             style = '''
                     style="
@@ -50,4 +60,4 @@ def sidebar_UI():
 
             st.caption(company_profile(option[:3])['companyProfile'].values[0])
     
-    return option
+    return option, numOfAnswers

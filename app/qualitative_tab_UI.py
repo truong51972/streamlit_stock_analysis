@@ -19,13 +19,16 @@ def get_info_and_display(title, question, getAnswer:bool= True, numOfAnswers = 1
         with col2:
             col2_container = col2.container(border=False)
             with col2_container:
-                    
-                tabName = []
-                for i in range(numOfAnswers):
-                    tabName.append(f'Thông tin thứ {i+1}')
-                tabs = st.tabs(tabName)
                 
-                for tab in tabs:
+                tabName = ['Thông tin']
+                for i in range(numOfAnswers):
+                    tabName.append(f'AI {i+1}')
+                
+                tabs = st.tabs(tabName)
+                with tabs[0]:
+                    st.markdown('huhh!', unsafe_allow_html=True)
+
+                for tab in tabs[1:]:
                     with tab:
                         if getAnswer:
                             bard_output = bardAI.getAnwser(prompt=question)
@@ -34,10 +37,9 @@ def get_info_and_display(title, question, getAnswer:bool= True, numOfAnswers = 1
                             tab.markdown('Get answer is off', unsafe_allow_html=True)
 
 
-def qualitative_tab_UI(ticker_and_name):
+def qualitative_tab_UI(ticker_and_name, numOfAnswers):
     
     getAnswer = False
-    numOfAnswers = 2
 
     ticker = ticker_and_name[:3]
     industry = company_overview(ticker)['industry'].values[0]

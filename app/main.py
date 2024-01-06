@@ -8,14 +8,14 @@ from app.quantitative_tab_UI import quantitative_tab_UI
 def run():
     st.set_page_config(layout="wide")
 
-    ticker_and_name = sidebar_UI()
+    ticker_and_name, numOfAnswers = sidebar_UI()
 
 
     if st.session_state.get('analyze'):
         qualitative_tab, quantitative_tab, valuation_tab = st.tabs(["Qualitative", "Quantitative", "Valuation"])
 
         with qualitative_tab:
-            qualitative_tab_UI(ticker_and_name)
+            qualitative_tab_UI(ticker_and_name, numOfAnswers)
 
         with quantitative_tab:
             quantitative_tab_UI(ticker_and_name)

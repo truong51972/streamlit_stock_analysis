@@ -90,3 +90,43 @@ def get_company_finance_info(stock):
 
     row = [companyName, price, shares, marketCap, debt, bvps, ebitda, eps, pe, pb, ee]
     return row
+
+
+# @st.cache_data
+def get_financial_info_from_CafeF(ticker, numType):
+    today = date.today()
+    quarter = round((today.month+1)/3 + 1/3)
+    year = today.year
+    ticker = ticker.lower()
+
+    type = {1: 'incsta', 2: 'bsheet', 3: 'cashflow'}
+    times = 0
+
+    while True:
+        url = f'https://s.cafef.vn/bao-cao-tai-chinh/{ticker}/{type[numType]}/{year}/{quarter}/0/0/ket-qua-hoat-dong-kinh-doanh-.chn'
+        print(url)
+        dfs = pd.read_html(url)
+        if np.isnan(dfs[4].iloc[3,4]):
+            quarter -= 1
+            if quarter == 0:
+                quarter = 4
+                year -= 1
+        else: break
+        times += 1
+        if times == 8: break
+
+    format_table = ["Thông tin"]
+    format_table.extend(dfs[3].loc[0,1:4].tolist())
+    print(format_table)
+    df = pd.DataFrame(columns= format_table, dtype='float32')
+    pd.options.display.float_format = '{:,.2f}'.format
+
+    for i in range(len(dfs[4])):
+        df.loc[len(df.index)] = (dfs[4].loc[i,0:4]).tolist()
+    df.set_index('Thông tin', inplace=True)
+
+    df = df.astype(float, copy=True)
+
+    df[df.abs() > 10000] = round(df[df.abs() > 10000] / 1000000000,4)
+    df.fillna('-',inplace= True)
+    return df

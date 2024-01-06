@@ -3,56 +3,86 @@ import plotly.express as px
 import pandas as pd
 from vnstock import *
 from app.bard_AI import bard_AI
-
-def financial_cal(ticker):
-    incomestatement = financial_flow(symbol="TCB", report_type='incomestatement', report_range='quarterly')
-    incomestatement.reset_index(inplace=True)
-
-    balancesheet = financial_flow(symbol="TCB", report_type='balancesheet', report_range='quarterly')
-    balancesheet.reset_index(inplace=True)
-
-    cashflow = financial_flow(symbol="TCB", report_type='cashflow', report_range='quarterly')
-    cashflow.reset_index(inplace=True)
-
-    financial_df = pd.DataFrame()
-    # financial_df['range'] = 
-    print(balancesheet)
+from app.stock import get_financial_info_from_CafeF
 
 def quantitative_tab_UI(ticker_and_name):
 
     ticker = ticker_and_name[:3]
-    df = financial_ratio(ticker, 'quarterly', is_all= True)
-    df = df.T
-    df.reset_index(inplace=True)
-    # financial_cal(ticker)
-    
-    fig = go.Figure()
-    roe = go.Scatter(
-        x=df['range'].values.tolist()[::-1],
-        y=df['roe'].values.tolist()[::-1],
-        mode='lines',
-        name='Lợi nhuận trên vốn chủ (ROE)'
-        )
-    fig.add_trace(roe)
+    last_quarters = 40
 
-    roa = go.Scatter(
-        x=df['range'].values.tolist()[::-1],
-        y=df['roa'].values.tolist()[::-1],
-        mode='lines',
-        name='Lợi nhuận trên tài sản (ROA)',
-        )
-    fig.add_trace(roa)
+    financialRatio = financial_ratio(ticker, 'quarterly', is_all=True).T
+    financialRatio.reset_index(inplace=True)
+    financialRatio = financialRatio.loc[:last_quarters] 
+    financialRatio = financialRatio.iloc[::-1]
 
-    st.plotly_chart(fig, use_container_width=True)
+    valuation_df = pd.DataFrame()
+    valuation_df['Quý'] = financialRatio['range']
+    valuation_df['P/E'] = financialRatio['priceToEarning']
+    valuation_df['P/B'] = financialRatio['priceToBook']
+    valuation_df['Earning Per Share'] = financialRatio['earningPerShare']
+    valuation_df['EV/EBITDA'] = financialRatio['valueBeforeEbitda']
+
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.container(border=True):
+            fig = px.line(valuation_df, x= 'Quý', y= ['P/E', 'P/B', 'EV/EBITDA'], title='Chỉ số định giá')
+            st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        with st.container(border=True):
+            fig = px.line(valuation_df, x= 'Quý', y= ['Earning Per Share'], title='Earning Per Share')
+            st.plotly_chart(fig, use_container_width=True)
+
+    operationEfficiency_df = pd.DataFrame()
+    operationEfficiency_df['Quý'] = financialRatio['range']
+    operationEfficiency_df['Tỷ suất sinh lời trên vốn chủ (ROE)'] = financialRatio['roe']
+    operationEfficiency_df['Tỷ suất sinh lời trên tài sản (ROA)'] = financialRatio['roa']
+    operationEfficiency_df['Biên LN gộp (GPM)'] = financialRatio['grossProfitMargin']
+    operationEfficiency_df['Biên LN hoạt động (OPM)'] = financialRatio['operatingProfitMargin']
+    operationEfficiency_df['Biên LNST (PTM)'] = financialRatio['postTaxMargin']
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.container(border=True):
+            fig = px.line(operationEfficiency_df, x= 'Quý', y= ['Tỷ suất sinh lời trên vốn chủ (ROE)', 'Tỷ suất sinh lời trên tài sản (ROA)'], title='Tỷ suất sinh lời')
+            st.plotly_chart(fig, use_container_width=True)
+
+    with col2:
+        with st.container(border=True):
+            fig = px.line(operationEfficiency_df, x= 'Quý', y= ['Biên LN gộp (GPM)', 'Biên LN hoạt động (OPM)', 'Biên LNST (PTM)'], title='Biên lợi nhuận')
+            st.plotly_chart(fig, use_container_width=True)
+
+    debt_df = pd.DataFrame()
+    debt_df['Quý'] = financialRatio['range']
+    debt_df['Vay/VCSH'] = financialRatio['debtOnEquity']
+    debt_df['Vay/Tài sản'] = financialRatio['debtOnAsset']
+    debt_df['Đòn bẩy tài chính'] = financialRatio['assetOnEquity']
+
+    payable_df = pd.DataFrame()
+    payable_df['Quý'] = financialRatio['range']
+    payable_df['Thanh toán hiện hành'] = financialRatio['currentPayment']
+    payable_df['Thanh toán nhanh'] = financialRatio['quickPayment']
+
+    col1, col2 = st.columns(2)
+    with col1:
+        with st.container(border=True):
+            fig = px.line(debt_df, x= 'Quý', y= ['Vay/VCSH', 'Vay/Tài sản', 'Đòn bẩy tài chính'], title='Nợ')
+            st.plotly_chart(fig, use_container_width=True)
+    with col2:
+        with st.container(border=True):
+            fig = px.line(payable_df, x= 'Quý', y= ['Thanh toán hiện hành', 'Thanh toán nhanh'], title='Thanh khoản')
+            st.plotly_chart(fig, use_container_width=True)
+        
 
     with st.expander("Báo cáo tài chính"):
-        df = financial_report(ticker, report_type='IncomeStatement', frequency='Quarterly')
-        st.table(df.iloc[:,[0, -4, -3, -2, -1]])
+        df = get_financial_info_from_CafeF(ticker,1)
+        st.table(df)
 
     with st.expander("Cân đối kế toán"):
-        df = financial_report(ticker, report_type='BalanceSheet', frequency='Quarterly')
-        st.table(df.iloc[:,[0, -4, -3, -2, -1]])
+        df = get_financial_info_from_CafeF(ticker,2)
+        st.table(df)
 
     with st.expander("Chuyển lưu tiền tệ"):
-        df = financial_report(ticker, report_type='CashFlow', frequency='Quarterly')
-        st.table(df.iloc[:,[0, -4, -3, -2, -1]])
+        df = get_financial_info_from_CafeF(ticker,3)
+        st.table(df)
